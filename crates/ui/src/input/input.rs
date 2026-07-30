@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use gpui::prelude::FluentBuilder as _;
 use gpui::{
-    AnyElement, App, DefiniteLength, Edges, EdgesRefinement, Entity, Hsla, InteractiveElement as _,
+    AccessibleAction, AnyElement, App, DefiniteLength, Edges, EdgesRefinement, Entity, Hsla, InteractiveElement as _,
     IntoElement, MouseButton, MouseDownEvent, ParentElement as _, Rems, RenderOnce, Role,
     SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled, TextAlign, Window, div,
     px, relative,
@@ -377,6 +377,12 @@ impl RenderOnce for Input {
         let disabled = self.disabled;
         let is_multi_line = state.mode.is_multi_line();
         let accessibility_role = Self::accessibility_role(is_multi_line, content_type, self.role);
+        let accessibility_value = state.text.to_string();
+        let accessibility_state = self.state.clone();
+        let exposes_accessibility_value = !matches!(
+            content_type,
+            Some(InputContentType::Password | InputContentType::NewPassword)
+        );
         let focused = state.focus_handle.is_focused(window) && !state.disabled;
         if focused {
             sync_native_content_type(window, content_type, state.disabled);
@@ -419,12 +425,23 @@ impl RenderOnce for Input {
                 this.aria_label(label.clone())
             })
             .role(accessibility_role)
+            .when(exposes_accessibility_value, |this| {
+                this.aria_value(accessibility_value)
+            })
             .flex()
             .key_context(crate::input::CONTEXT)
             .track_focus(&state.focus_handle.clone())
             .tab_index(self.tab_index)
             .when(!state.disabled, |this| {
-                this.on_action(window.listener_for(&self.state, InputState::backspace))
+                this.on_a11y_action(AccessibleAction::SetValue, move |data, window, cx| {
+                    let Some(gpui::accesskit::ActionData::Value(value)) = data else {
+                        return;
+                    };
+                    accessibility_state.update(cx, |state, cx| {
+                        state.replace_all(value.to_string(), window, cx);
+                    });
+                })
+                .on_action(window.listener_for(&self.state, InputState::backspace))
                     .on_action(window.listener_for(&self.state, InputState::delete))
                     .on_action(
                         window.listener_for(&self.state, InputState::delete_to_beginning_of_line),
