@@ -412,6 +412,12 @@ impl RenderOnce for Input {
 
         div()
             .id(("input", self.state.entity_id()))
+            .when_some(self.accessibility_id.as_ref(), |this, id| {
+                this.accessibility_id(id.clone())
+            })
+            .when_some(self.accessibility_label.as_ref(), |this, label| {
+                this.aria_label(label.clone())
+            })
             .role(accessibility_role)
             .flex()
             .key_context(crate::input::CONTEXT)
