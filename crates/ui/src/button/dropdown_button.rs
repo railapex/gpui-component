@@ -1,7 +1,8 @@
 use gpui::Corners;
 use gpui::{
     Anchor, App, Context, Edges, ElementId, InteractiveElement as _, IntoElement, ParentElement,
-    RenderOnce, SharedString, StyleRefinement, Styled, Window, div, prelude::FluentBuilder,
+    RenderOnce, Role, SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled,
+    Window, div, prelude::FluentBuilder,
 };
 
 use crate::{
@@ -15,6 +16,7 @@ use super::{Button, ButtonRounded, ButtonVariant, ButtonVariants};
 #[derive(IntoElement)]
 pub struct DropdownButton {
     id: ElementId,
+    accessibility_id: Option<SharedString>,
     style: StyleRefinement,
     button: Option<Button>,
     menu:
@@ -37,6 +39,7 @@ impl DropdownButton {
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
             id: id.into(),
+            accessibility_id: None,
             style: StyleRefinement::default(),
             button: None,
             menu: None,
@@ -51,6 +54,12 @@ impl DropdownButton {
             anchor: Anchor::TopRight,
             tooltip: ComponentTooltip::default(),
         }
+    }
+
+    /// Set the stable identifier exposed to accessibility clients.
+    pub fn accessibility_id(mut self, id: impl Into<SharedString>) -> Self {
+        self.accessibility_id = Some(id.into());
+        self
     }
 
     /// Set tooltip text for the dropdown button.
@@ -158,6 +167,8 @@ impl RenderOnce for DropdownButton {
 
         div()
             .id(self.id)
+            .role(Role::Group)
+            .when_some(self.accessibility_id, |this, id| this.accessibility_id(id))
             .h_flex()
             .refine_style(&self.style)
             .when_some(self.button, |this, button| {

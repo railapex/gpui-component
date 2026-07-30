@@ -4,7 +4,8 @@ use gpui::prelude::FluentBuilder as _;
 use gpui::{
     AnyElement, App, DefiniteLength, Edges, EdgesRefinement, Entity, Hsla, InteractiveElement as _,
     IntoElement, MouseButton, MouseDownEvent, ParentElement as _, Rems, RenderOnce, Role,
-    StatefulInteractiveElement as _, StyleRefinement, Styled, TextAlign, Window, div, px, relative,
+    SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled, TextAlign, Window, div,
+    px, relative,
 };
 
 use crate::button::{Button, ButtonVariants as _};
@@ -51,6 +52,8 @@ pub struct Input {
     selected: bool,
     content_type: Option<InputContentType>,
     role: Option<Role>,
+    accessibility_id: Option<SharedString>,
+    accessibility_label: Option<SharedString>,
 
     /// An optional context menu builder to allow a custom context menu on the input.
     ///
@@ -96,6 +99,8 @@ impl Input {
             selected: false,
             content_type: None,
             role: None,
+            accessibility_id: None,
+            accessibility_label: None,
             context_menu_builder: None,
         }
     }
@@ -166,6 +171,18 @@ impl Input {
     /// If unset, the role is inferred from multi-line mode and content type.
     pub fn role(mut self, role: Role) -> Self {
         self.role = Some(role);
+        self
+    }
+
+    /// Set the stable identifier exposed to accessibility clients.
+    pub fn accessibility_id(mut self, id: impl Into<SharedString>) -> Self {
+        self.accessibility_id = Some(id.into());
+        self
+    }
+
+    /// Set the accessible label for the input.
+    pub fn accessibility_label(mut self, label: impl Into<SharedString>) -> Self {
+        self.accessibility_label = Some(label.into());
         self
     }
 
